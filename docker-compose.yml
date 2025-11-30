@@ -17,7 +17,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
   backend:
     build:
       context: ./backend
@@ -30,13 +29,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    restart: no
+    volumes:
+      - ./backend/jawiki-latest-pages-articles.xml:/app/jawiki-latest-pages-articles.xml
+      - ./backend/data:/root/data
 
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: wiki-client
+    container_name: wiki-client 
     ports:
       - "3000:3000"
     environment:

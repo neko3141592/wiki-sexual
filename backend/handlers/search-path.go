@@ -4,14 +4,11 @@ import (
 	"gin-quickstart/db"
 	"gin-quickstart/utils"
 	"net/http"
-
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/gin-gonic/gin"
 )
 
 var (
 	Graph     map[int][]int
-	SexualIDs mapset.Set[int]
 	IdToTitle map[int]string
 	TitleToID map[string]int
 )

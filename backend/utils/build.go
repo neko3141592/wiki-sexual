@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"sync"
-
-	mapset "github.com/deckarep/golang-set/v2"
 	"gorm.io/gorm"
 )
 
@@ -18,10 +16,10 @@ func notUnion(s string) bool {
 	// return false
 }
 
-func BuildMap(filename string, maxCount int, db *gorm.DB, saveDB bool) (map[int]string, map[string]int, mapset.Set[int], error) {
+
+func BuildMap(filename string, maxCount int, db *gorm.DB, saveDB bool) (map[int]string, map[string]int, error) {
 	idToTitle := make(map[int]string)
 	titleToID := make(map[string]int)
-	sexualIDs := mapset.NewSet[int]()
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
@@ -29,37 +27,33 @@ func BuildMap(filename string, maxCount int, db *gorm.DB, saveDB bool) (map[int]
 	err := ProcessArticles(
 		filename,
 		maxCount,
-		func(_ []string, title, id string, _ []string, judge bool) error {
+		func(_ []string, title, id string, _ []string) error {
 			if title != "" && id != "" {
 				wg.Add(1)
-				go func(title, id string, judge bool) {
+				go func(title, id string) {
 					defer wg.Done()
 					mu.Lock()
 					titleToID[title] = atoi(id)
 					idToTitle[atoi(id)] = title
-					if judge {
-						sexualIDs.Add(atoi(id))
-					}
 					mu.Unlock()
-					if saveDB {
-						article := models.Article{
-							Title:    title,
-							WikiID:   atoi(id),
-							IsSexual: judge,
-						}
-						db.FirstOrCreate(&article, models.Article{WikiID: article.WikiID})
+				}(title, id)
+				if saveDB {
+					article := models.Article{
+						Title:    title,
+						WikiID:   atoi(id),
 					}
-				}(title, id, judge)
+					db.FirstOrCreate(&article, models.Article{WikiID: article.WikiID})
+				}
 			}
 			return nil
 		},
 	)
 	wg.Wait()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	fmt.Println("Title to ID map built.")
-	return idToTitle, titleToID, sexualIDs, nil
+	fmt.Println("Map built.")
+	return idToTitle, titleToID, nil
 }
 
 func atoi(s string) int {
@@ -76,7 +70,7 @@ func BuildGraph(filename string, maxCount int, titleToID map[string]int, db *gor
 	err := ProcessArticles(
 		filename,
 		maxCount,
-		func(_ []string, title, id string, links []string, judge bool) error {
+		func(_ []string, title, id string, links []string) error {
 			if id == "" {
 				return nil
 			}

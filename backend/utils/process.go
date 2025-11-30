@@ -11,7 +11,7 @@ import (
 func ProcessArticles( 
 	filename string, 
 	maxCount int, 
-	handler func(articleLines []string, title, id string, links []string, judge bool) error,
+	handler func(articleLines []string, title, id string, links []string) error,
 ) error {
 
 	fmt.Println("Processing articles from:", filename)
@@ -25,7 +25,6 @@ func ProcessArticles(
 	reader := bufio.NewReader(file)
 
 	var articleLines []string
-	var judge bool
 	inPage := false
 	count := 0
 
@@ -49,10 +48,9 @@ func ProcessArticles(
 			id := extractID(articleLines)
 			links := extractLinks(articleLines)
 
-			if err := handler(articleLines, title, id, links, judge); err != nil {
+			if err := handler(articleLines, title, id, links); err != nil {
 				return err
 			}
-			judge = false
 
 			count++
 			if count >= maxCount {
@@ -61,10 +59,6 @@ func ProcessArticles(
 
 		} else if inPage {
 			articleLines = append(articleLines, line)
-
-			if judgeIsSexual(line) {
-				judge = true
-			}
 		}
 	}
 

@@ -13,7 +13,7 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() error {
-	// .envファイルがあれば読み込む（Docker環境では環境変数が既に設定されているため無視）
+
 	_ = godotenv.Load()
 	dsn := os.Getenv("DSN")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
